@@ -234,9 +234,8 @@ class WC_Report_Sales_By_Marketplace {
 				continue;
 			}
 
-			$prepared_data[ $time ] = $result->order_total;
+			$prepared_data[ $time ] += $result->order_total;
 		}
-
 		return $prepared_data;
 	}
 
@@ -300,6 +299,7 @@ class WC_Report_Sales_By_Marketplace {
 				WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' AND pm3.meta_value = '$marketplace_number'
 				GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day)
 				ORDER BY order_date";
+		echo $sql;
         return $wpdb->get_results( $sql );
     }
 

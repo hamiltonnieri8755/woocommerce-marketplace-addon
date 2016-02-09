@@ -226,6 +226,3 @@ if ( ! defined( 'ABSPATH' ) ) {
 		});
 	});
 </script>
-<!--
-
--->
