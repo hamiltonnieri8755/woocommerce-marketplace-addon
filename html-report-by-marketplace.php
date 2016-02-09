@@ -38,10 +38,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<h3 class="stats_range">
 			<?php $this->get_export_button(); ?>
 			<ul>
-				<li id="year" class=""><a href="/wplab/wp-admin/admin.php?page=wc-reports&tab=orders&report=sales_by_marketplace&range=year">Year</a></li>
-				<li id="lastmonth" class=""><a href="/wplab/wp-admin/admin.php?page=wc-reports&tab=orders&report=sales_by_marketplace&range=lastmonth">Last Month</a></li>
-				<li id="thismonth" class=""><a href="/wplab/wp-admin/admin.php?page=wc-reports&tab=orders&report=sales_by_marketplace&range=thismonth">This Month</a></li>
-				<li id="last7day" class=""><a href="/wplab/wp-admin/admin.php?page=wc-reports&tab=orders&report=sales_by_marketplace&range=last7day">Last 7 Days</a></li>				
+				<li id="year" class=""><a href="?page=wc-reports&tab=orders&report=sales_by_marketplace&range=year">Year</a></li>
+				<li id="lastmonth" class=""><a href="?page=wc-reports&tab=orders&report=sales_by_marketplace&range=lastmonth">Last Month</a></li>
+				<li id="thismonth" class=""><a href="?page=wc-reports&tab=orders&report=sales_by_marketplace&range=thismonth">This Month</a></li>
+				<li id="last7day" class=""><a href="?page=wc-reports&tab=orders&report=sales_by_marketplace&range=last7day">Last 7 Days</a></li>				
 				<li id="custom" class="custom">
 					Custom:					
 					<form method="GET">
@@ -53,8 +53,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<input name="report" value="sales_by_marketplace" type="hidden">							
 							<input name="range" value="custom" type="hidden">
 
-							<input id="from" size="9" placeholder="yyyy-mm-dd" value="" name="from" class="range_datepicker from" type="text">
-							<input id="to" size="9" placeholder="yyyy-mm-dd" value="" name="to" class="range_datepicker to" type="text">
+							<input id="from" size="9" placeholder="yyyy-mm-dd" value="<?php if (isset($_GET['from'])) echo $_GET['from']; ?>" name="from" class="range_datepicker from" type="text">
+							<input id="to" size="9" placeholder="yyyy-mm-dd" value="<?php if (isset($_GET['to'])) echo $_GET['to']; ?>" name="to" class="range_datepicker to" type="text">
 							<input class="button" value="Go" type="submit">
 						</div>
 					</form>

@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package     WooCommerce/Admin/Reports
  * @version     2.1.0
  */
+
 class WC_Report_Sales_By_Marketplace {
 
 	/**
@@ -194,6 +195,11 @@ class WC_Report_Sales_By_Marketplace {
 
 	}
 
+	/**
+	 * Generate chart data
+	 *
+	 * @return string
+	 */
 	public function prepare_data($marketplace_number) {
 		$prepared_data = array();
 
@@ -234,6 +240,11 @@ class WC_Report_Sales_By_Marketplace {
 		return $prepared_data;
 	}
 
+	/**
+	 * Get total for chart legends
+	 *
+	 * @return string
+	 */
 	public function get_mp_total_formatted($marketplace_id) {
 		$current_mp = $this->data[$marketplace_id];
 		$total = 0;
@@ -243,6 +254,11 @@ class WC_Report_Sales_By_Marketplace {
 		return wc_price( $total );
 	}
 
+	/**
+	 * Export marketplace data
+	 *
+	 * @return string
+	 */
 	public function get_export_button() {
 		$current_range = ! empty( $_GET['range'] ) ? sanitize_text_field( $_GET['range'] ) : '7day';
 		?>
@@ -257,6 +273,11 @@ class WC_Report_Sales_By_Marketplace {
 		<?php
 	}
 
+	/**
+	 * Get marketplace order amount data
+	 *
+	 * @return array
+	 */
     public function get_order_amount_data($marketplace_number) {
         global $wpdb;
 
@@ -282,6 +303,11 @@ class WC_Report_Sales_By_Marketplace {
         return $wpdb->get_results( $sql );
     }
 
+	/**
+	 * Generate all chart data
+	 *
+	 * @return bool
+	 */
     public function prepare_3marketplace_data() {
     	for ($i=0; $i<3; $i++)
     	{
@@ -296,18 +322,14 @@ class WC_Report_Sales_By_Marketplace {
     	return true;
     }
 
+	/**
+	 * Main
+	 *
+	 * @return 
+	 */
 	public function output_report() {
 		$this->calculate_current_range($this->range);
 		$this->prepare_3marketplace_data();	
 		include( 'html-report-by-marketplace.php' );
 	}
 }
-/*
-		echo $this->range;	echo "-range<br/>";
-		echo $this->chart_interval;	echo "-chart_interval<br/>";
-		echo $this->chart_groupby;	echo "-chart_groupby<br/>";
-		echo $this->group_by_query;	echo "-group_by_query<br/>";
-		echo $this->start_date."000";	echo "-start_date<br/>";	
-		echo $this->end_date."000";	echo "-end_date<br/>";
-		echo $this->barwidth;	echo "-barwidth<br/>";
-*/
