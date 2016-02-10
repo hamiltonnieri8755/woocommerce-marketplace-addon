@@ -282,24 +282,40 @@ class WC_Report_Sales_By_Marketplace {
 
         $start_date_forsql = date( 'Y-m-d', $this->start_date );
         $end_date_forsql   = date( 'Y-m-d', strtotime( '+1 day', $this->end_date ) );
-
-        $sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date,
-        		p.post_date AS order_day, 
-        		SUM(DISTINCT pm.meta_value) AS order_total
-				FROM {$wpdb->prefix}woocommerce_order_items oi
-
-				LEFT JOIN {$wpdb->prefix}postmeta pm 
-					ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total'
-
-				LEFT JOIN {$wpdb->prefix}posts p
-					ON oi.order_id = p.ID
-				LEFT JOIN {$wpdb->prefix}postmeta pm3 
-					ON oi.order_id = pm3.post_id AND pm3.meta_key = '_order_type'
-
-				WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' AND pm3.meta_value = '$marketplace_number'
-				GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day)
-				ORDER BY order_date";
-		echo $sql;
+        $sql = "";
+        switch ($marketplace_number)
+        {
+        	case '2':
+		        $sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
+						FROM wplab_woocommerce_order_items oi LEFT JOIN wplab_postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
+						LEFT JOIN wplab_posts p ON oi.order_id = p.ID 
+						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
+							AND oi.order_id IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
+						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
+						ORDER BY order_date";
+				break;
+			case '1':
+				$sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
+						FROM wplab_woocommerce_order_items oi LEFT JOIN wplab_postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
+						LEFT JOIN wplab_posts p ON oi.order_id = p.ID 
+						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
+							AND oi.order_id IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
+						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
+						ORDER BY order_date";
+				break;
+			case '0':
+				$sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
+						FROM wplab_woocommerce_order_items oi LEFT JOIN wplab_postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
+						LEFT JOIN wplab_posts p ON oi.order_id = p.ID 
+						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
+							AND oi.order_id NOT IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
+							AND oi.order_id NOT IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
+						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
+						ORDER BY order_date";
+				break;
+			default:
+				break;
+		}
         return $wpdb->get_results( $sql );
     }
 
