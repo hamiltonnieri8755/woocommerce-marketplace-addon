@@ -83,7 +83,7 @@ class WC_Report_Sales_By_Marketplace {
 	 */
 	public function __construct() {
 
-		if (isset($_GET['range'])) 
+		if ( isset( $_GET['range'] ) ) 
 			$this->range = $_GET['range']; 
 		else 
 			$this->range = "last7day";
@@ -200,7 +200,7 @@ class WC_Report_Sales_By_Marketplace {
 	 *
 	 * @return string
 	 */
-	public function prepare_data($marketplace_number) {
+	public function prepare_data( $marketplace_number ) {
 		$prepared_data = array();
 
 		// Ensure all days (or months) have values first in this range
@@ -219,7 +219,7 @@ class WC_Report_Sales_By_Marketplace {
 				$prepared_data[ $time ] = 0;
 			}
 		}
-		foreach ( $this->get_order_amount_data($marketplace_number) as $result ) {
+		foreach ( $this->get_order_amount_data( $marketplace_number ) as $result ) {
 			switch ( $this->chart_groupby ) {
 				case 'day' :
 					$time = strtotime( date( 'Ymd', strtotime( $result->order_date ) ) ) . '000';
@@ -244,10 +244,10 @@ class WC_Report_Sales_By_Marketplace {
 	 *
 	 * @return string
 	 */
-	public function get_mp_total_formatted($marketplace_id) {
-		$current_mp = $this->data[$marketplace_id];
+	public function get_mp_total_formatted( $marketplace_id ) {
+		$current_mp = $this->data[ $marketplace_id ];
 		$total = 0;
-		foreach ($current_mp as $element) {
+		foreach ( $current_mp as $element ) {
 			$total += $element[1];
 		}
 		return wc_price( $total );
@@ -277,39 +277,38 @@ class WC_Report_Sales_By_Marketplace {
 	 *
 	 * @return array
 	 */
-    public function get_order_amount_data($marketplace_number) {
+    public function get_order_amount_data( $marketplace_number ) {
         global $wpdb;
 
         $start_date_forsql = date( 'Y-m-d', $this->start_date );
         $end_date_forsql   = date( 'Y-m-d', strtotime( '+1 day', $this->end_date ) );
         $sql = "";
-        switch ($marketplace_number)
-        {
+        switch ( $marketplace_number ) {
         	case '2':
 		        $sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
-						FROM wplab_woocommerce_order_items oi LEFT JOIN wplab_postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
-						LEFT JOIN wplab_posts p ON oi.order_id = p.ID 
+						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
+						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
 						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND oi.order_id IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
+							AND oi.order_id IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
 						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
 						ORDER BY order_date";
 				break;
 			case '1':
 				$sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
-						FROM wplab_woocommerce_order_items oi LEFT JOIN wplab_postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
-						LEFT JOIN wplab_posts p ON oi.order_id = p.ID 
+						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
+						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
 						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND oi.order_id IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
+							AND oi.order_id IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
 						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
 						ORDER BY order_date";
 				break;
 			case '0':
 				$sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
-						FROM wplab_woocommerce_order_items oi LEFT JOIN wplab_postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
-						LEFT JOIN wplab_posts p ON oi.order_id = p.ID 
+						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
+						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
 						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND oi.order_id NOT IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
-							AND oi.order_id NOT IN (SELECT pm1.post_id FROM wplab_postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
+							AND oi.order_id NOT IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
+							AND oi.order_id NOT IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
 						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
 						ORDER BY order_date";
 				break;
@@ -325,13 +324,11 @@ class WC_Report_Sales_By_Marketplace {
 	 * @return bool
 	 */
     public function prepare_3marketplace_data() {
-    	for ($i=0; $i<3; $i++)
-    	{
+    	for ( $i = 0; $i < 3; $i ++ ) {
     		$data_each = array();
-    		$temp_data = $this->prepare_data($i);
-    		foreach ($temp_data as $key => $value)
-    		{
-    			array_push($data_each, array($key, $value));
+    		$temp_data = $this->prepare_data( $i );
+    		foreach ( $temp_data as $key => $value ) {
+    			array_push( $data_each, array($key, $value) );
     		}
     		$this->data[$i] = $data_each;
     	}
@@ -344,7 +341,7 @@ class WC_Report_Sales_By_Marketplace {
 	 * @return 
 	 */
 	public function output_report() {
-		$this->calculate_current_range($this->range);
+		$this->calculate_current_range( $this->range );
 		$this->prepare_3marketplace_data();	
 		include( 'html-report-by-marketplace.php' );
 	}
