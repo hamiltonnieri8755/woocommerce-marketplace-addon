@@ -289,7 +289,7 @@ class WC_Report_Sales_By_Marketplace {
 						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
 						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
 						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold', 'wc-refunded')
+							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold')
 							AND oi.order_id IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
 						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
 						ORDER BY order_date";
@@ -299,7 +299,7 @@ class WC_Report_Sales_By_Marketplace {
 						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
 						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
 						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold', 'wc-refunded')
+							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold')
 							AND oi.order_id IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
 						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
 						ORDER BY order_date";
@@ -309,7 +309,7 @@ class WC_Report_Sales_By_Marketplace {
 						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
 						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
 						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold', 'wc-refunded')
+							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold')
 							AND oi.order_id NOT IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
 							AND oi.order_id NOT IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
 						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
@@ -318,6 +318,7 @@ class WC_Report_Sales_By_Marketplace {
 			default:
 				break;
 		}
+		//echo $sql."<br/>";
         return $wpdb->get_results( $sql );
     }
 
