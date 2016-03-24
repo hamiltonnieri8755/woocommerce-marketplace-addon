@@ -89,7 +89,7 @@ class WC_Report_Sales_By_Marketplace {
 			$this->range = "last7day";
 
 		$this->data = array();
-		$this->chart_colours = array( '#1abc9c', '#34495e', '#3498db' );
+		$this->chart_colours = array( '#1abc9c', '#34495e', '#3498db', '#c6d8d1' );
 	}
 
 	/**
@@ -240,7 +240,7 @@ class WC_Report_Sales_By_Marketplace {
 	}
 
 	/**
-	 * Get total for chart legends
+	 * Get formatted total for chart legends
 	 *
 	 * @return string
 	 */
@@ -251,6 +251,39 @@ class WC_Report_Sales_By_Marketplace {
 			$total += $element[1];
 		}
 		return wc_price( $total );
+	}
+
+	/**
+	 * Get total for chart legends
+	 *
+	 * @return string
+	 */
+	public function get_mp_total( $marketplace_id ) {
+		$current_mp = $this->data[ $marketplace_id ];
+		$total = 0;
+		foreach ( $current_mp as $element ) {
+			$total += $element[1];
+		}
+		return $total ;
+	}
+
+	/**
+	 * Get % for chart legends
+	 *
+	 * @return string
+	 */
+	public function get_mp_percent( $marketplace_id ) {
+		$mp_total_arr = array();
+		$mp_total_arr[0] = $this->get_mp_total( 0 );
+		$mp_total_arr[1] = $this->get_mp_total( 1 );
+		$mp_total_arr[2] = $this->get_mp_total( 2 );
+
+		$mp_overall = $mp_total_arr[0] + $mp_total_arr[1] + $mp_total_arr[2];
+
+		if ( $mp_overall > 0)
+			return number_format( $mp_total_arr[ $marketplace_id ] / $mp_overall * 100 , 2 ) . " %" ;
+
+		return "0 %";
 	}
 
 	/**
@@ -285,35 +318,41 @@ class WC_Report_Sales_By_Marketplace {
         $sql = "";
         switch ( $marketplace_number ) {
         	case '2':
-		        $sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
-						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
-						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
-						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold')
-							AND oi.order_id IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
-						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
-						ORDER BY order_date";
+		        $sql = "SELECT SUM( meta__order_total.meta_value) as order_total, DATE_FORMAT(posts.post_date,'%Y-%m-%d') AS order_date, posts.post_date AS order_day
+						FROM {$wpdb->prefix}posts AS posts 
+						INNER JOIN {$wpdb->prefix}postmeta AS meta__order_total ON ( posts.ID = meta__order_total.post_id AND meta__order_total.meta_key = '_order_total' )
+						WHERE 	posts.post_type 	IN ( 'shop_order' )
+						AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold')
+						AND 	posts.post_date >= '$start_date_forsql'
+						AND 	posts.post_date < '$end_date_forsql'
+						AND 	posts.ID IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_ebay_order_id')
+						GROUP BY YEAR(posts.post_date), MONTH(posts.post_date), DAY(posts.post_date) 
+						ORDER BY post_date";
 				break;
 			case '1':
-				$sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
-						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
-						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
-						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold')
-							AND oi.order_id IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
-						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
-						ORDER BY order_date";
+		        $sql = "SELECT SUM( meta__order_total.meta_value) as order_total, DATE_FORMAT(posts.post_date,'%Y-%m-%d') AS order_date, posts.post_date AS order_day
+						FROM {$wpdb->prefix}posts AS posts 
+						INNER JOIN {$wpdb->prefix}postmeta AS meta__order_total ON ( posts.ID = meta__order_total.post_id AND meta__order_total.meta_key = '_order_total' )
+						WHERE 	posts.post_type 	IN ( 'shop_order' )
+						AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold')
+						AND 	posts.post_date >= '$start_date_forsql'
+						AND 	posts.post_date < '$end_date_forsql'
+						AND 	posts.ID IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_wpla_amazon_order_id')
+						GROUP BY YEAR(posts.post_date), MONTH(posts.post_date), DAY(posts.post_date) 
+						ORDER BY post_date";
 				break;
 			case '0':
-				$sql = "SELECT DISTINCT oi.order_id, DATE_FORMAT(p.post_date,'%Y-%m-%d') AS order_date, p.post_date AS order_day, SUM(DISTINCT pm.meta_value) AS order_total 
-						FROM {$wpdb->prefix}woocommerce_order_items oi LEFT JOIN {$wpdb->prefix}postmeta pm ON oi.order_id = pm.post_id AND pm.meta_key = '_order_total' 
-						LEFT JOIN {$wpdb->prefix}posts p ON oi.order_id = p.ID 
-						WHERE p.post_date >= '$start_date_forsql' AND p.post_date < '$end_date_forsql' 
-							AND p.post_status IN ('wc-completed', 'wc-processing', 'wc-on-hold')
-							AND oi.order_id NOT IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_ebay_order_id')
-							AND oi.order_id NOT IN (SELECT pm1.post_id FROM {$wpdb->prefix}postmeta pm1 WHERE pm1.meta_key = '_wpla_amazon_order_id')
-						GROUP BY YEAR(order_day), MONTH(order_day), DAY(order_day) 
-						ORDER BY order_date";
+		        $sql = "SELECT SUM( meta__order_total.meta_value) as order_total, DATE_FORMAT(posts.post_date,'%Y-%m-%d') AS order_date, posts.post_date AS order_day
+						FROM {$wpdb->prefix}posts AS posts 
+						INNER JOIN {$wpdb->prefix}postmeta AS meta__order_total ON ( posts.ID = meta__order_total.post_id AND meta__order_total.meta_key = '_order_total' )
+						WHERE 	posts.post_type 	IN ( 'shop_order' )
+						AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold')
+						AND 	posts.post_date >= '$start_date_forsql'
+						AND 	posts.post_date < '$end_date_forsql'
+						AND 	posts.ID NOT IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_ebay_order_id')
+						AND 	posts.ID NOT IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_wpla_amazon_order_id')
+						GROUP BY YEAR(posts.post_date), MONTH(posts.post_date), DAY(posts.post_date) 
+						ORDER BY post_date";
 				break;
 			default:
 				break;
@@ -349,4 +388,84 @@ class WC_Report_Sales_By_Marketplace {
 		$this->prepare_3marketplace_data();	
 		include( 'html-report-by-marketplace.php' );
 	}
+
+	/**
+	 * Get marketplace order amount data
+	 *
+	 * @return array
+	 */
+    public function get_best_seller_mp( $marketplace_number ) {
+        global $wpdb;
+
+        $start_date_forsql = date( 'Y-m-d', $this->start_date );
+        $end_date_forsql   = date( 'Y-m-d', strtotime( '+1 day', $this->end_date ) );
+        $sql = "";
+        switch ( $marketplace_number ) {
+        	case '2':
+		        $sql = "SELECT  order_item_meta__product_id.meta_value AS product_id,SUM( order_item_meta__qty.meta_value) AS order_item_qty FROM {$wpdb->prefix}posts AS posts 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_items AS order_items ON posts.ID = order_items.order_id
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__product_id ON (order_items.order_item_id = order_item_meta__product_id.order_item_id)  AND (order_item_meta__product_id.meta_key = '_product_id') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__qty ON (order_items.order_item_id = order_item_meta__qty.order_item_id)  AND (order_item_meta__qty.meta_key = '_qty') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__line_subtotal ON order_items.order_item_id = order_item_meta__line_subtotal.order_item_id 
+						WHERE 	posts.post_type 	IN ( 'shop_order' )
+						AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold')
+						AND 	posts.post_date >= '$start_date_forsql'
+						AND 	posts.post_date < '$end_date_forsql'
+						AND 	posts.ID IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_ebay_order_id')
+						AND ( ( order_item_meta__line_subtotal.meta_key   = '_line_subtotal' AND order_item_meta__line_subtotal.meta_value > '0' )) GROUP BY product_id ORDER BY order_item_qty DESC LIMIT 1";
+				break;
+			case '1':
+		        $sql = "SELECT  order_item_meta__product_id.meta_value AS product_id,SUM( order_item_meta__qty.meta_value) AS order_item_qty FROM {$wpdb->prefix}posts AS posts 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_items AS order_items ON posts.ID = order_items.order_id
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__product_id ON (order_items.order_item_id = order_item_meta__product_id.order_item_id)  AND (order_item_meta__product_id.meta_key = '_product_id') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__qty ON (order_items.order_item_id = order_item_meta__qty.order_item_id)  AND (order_item_meta__qty.meta_key = '_qty') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__line_subtotal ON order_items.order_item_id = order_item_meta__line_subtotal.order_item_id 
+						WHERE 	posts.post_type 	IN ( 'shop_order' )
+						AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold')
+						AND 	posts.post_date >= '$start_date_forsql'
+						AND 	posts.post_date < '$end_date_forsql'
+						AND 	posts.ID IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_wpla_amazon_order_id')
+						AND ( ( order_item_meta__line_subtotal.meta_key   = '_line_subtotal' AND order_item_meta__line_subtotal.meta_value > '0' )) GROUP BY product_id ORDER BY order_item_qty DESC LIMIT 1";
+				break;
+			case '0':
+		        $sql = "SELECT  order_item_meta__product_id.meta_value AS product_id,SUM( order_item_meta__qty.meta_value) AS order_item_qty FROM {$wpdb->prefix}posts AS posts 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_items AS order_items ON posts.ID = order_items.order_id
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__product_id ON (order_items.order_item_id = order_item_meta__product_id.order_item_id)  AND (order_item_meta__product_id.meta_key = '_product_id') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__qty ON (order_items.order_item_id = order_item_meta__qty.order_item_id)  AND (order_item_meta__qty.meta_key = '_qty') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__line_subtotal ON order_items.order_item_id = order_item_meta__line_subtotal.order_item_id 
+						WHERE 	posts.post_type 	IN ( 'shop_order' )
+						AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold')
+						AND 	posts.post_date >= '$start_date_forsql'
+						AND 	posts.post_date < '$end_date_forsql'
+						AND 	posts.ID NOT IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_ebay_order_id')
+						AND 	posts.ID NOT IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_wpla_amazon_order_id')
+						AND ( ( order_item_meta__line_subtotal.meta_key   = '_line_subtotal' AND order_item_meta__line_subtotal.meta_value > '0' )) GROUP BY product_id ORDER BY order_item_qty DESC LIMIT 1";
+				break;
+			case '3':
+		        $sql = "SELECT  order_item_meta__product_id.meta_value AS product_id,SUM( order_item_meta__qty.meta_value) AS order_item_qty FROM {$wpdb->prefix}posts AS posts 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_items AS order_items ON posts.ID = order_items.order_id
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__product_id ON (order_items.order_item_id = order_item_meta__product_id.order_item_id)  AND (order_item_meta__product_id.meta_key = '_product_id') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__qty ON (order_items.order_item_id = order_item_meta__qty.order_item_id)  AND (order_item_meta__qty.meta_key = '_qty') 
+						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__line_subtotal ON order_items.order_item_id = order_item_meta__line_subtotal.order_item_id 
+						WHERE 	posts.post_type 	IN ( 'shop_order' )
+						AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold')
+						AND 	posts.post_date >= '$start_date_forsql'
+						AND 	posts.post_date < '$end_date_forsql'
+						AND ( ( order_item_meta__line_subtotal.meta_key   = '_line_subtotal' AND order_item_meta__line_subtotal.meta_value > '0' )) GROUP BY product_id ORDER BY order_item_qty DESC LIMIT 1";
+				break;
+			default:
+				break;
+		}
+		//echo $sql."<br/>";
+        $rows = $wpdb->get_results( $sql );
+        //print_r($rows);
+        foreach ( $rows as $row ) 
+		{
+			$best_seller = array();
+			$best_seller['name'] = get_the_title( $row->product_id );
+			$best_seller['qty']   = $row->order_item_qty;
+			return $best_seller;
+		}
+		return null;
+    }
 }
