@@ -393,12 +393,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 			draw_graph();
 		});
 
-		jQuery(".more-info").click(function () {
-			if ( jQuery(this).siblings(".details").is(":hidden") ) {
-				jQuery(this).siblings(".details").slideDown();
-			} else {
-				jQuery(this).siblings(".details").slideUp();
-			}
-		});
 	});
 </script>

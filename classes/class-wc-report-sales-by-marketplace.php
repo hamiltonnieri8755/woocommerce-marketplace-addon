@@ -167,44 +167,61 @@ class WC_Report_Sales_By_Marketplace {
 				} else {
 					$this->chart_groupby = 'day';
 				}
-			break;
+				
+				break;
 
 			case 'year' :
+				
 				$this->start_date    = strtotime( date( 'Y-01-01', current_time('timestamp') ) );
 				$this->end_date      = strtotime( 'midnight', current_time( 'timestamp' ) );
 				$this->chart_groupby = 'month';
-			break;
+				
+				break;
 
 			case 'lastmonth' :
+				
 				$first_day_current_month = strtotime( date( 'Y-m-01', current_time( 'timestamp' ) ) );
 				$this->start_date        = strtotime( date( 'Y-m-01', strtotime( '-1 DAY', $first_day_current_month ) ) );
 				$this->end_date          = strtotime( date( 'Y-m-t', strtotime( '-1 DAY', $first_day_current_month ) ) );
 				$this->chart_groupby     = 'day';
-			break;
+				
+				break;
 
 			case 'thismonth' :
+				
 				$this->start_date    = strtotime( date( 'Y-m-01', current_time('timestamp') ) );
 				$this->end_date      = strtotime( 'midnight', current_time( 'timestamp' ) );
 				$this->chart_groupby = 'day';
-			break;
+				
+				break;
 
 			case 'last7day' :
+				
 				$this->start_date    = strtotime( '-6 days', current_time( 'timestamp' ) );
 				$this->end_date      = strtotime( 'midnight', current_time( 'timestamp' ) );
 				$this->chart_groupby = 'day';
-			break;
+			
+				break;
+
+			default:
+				
+				break;
+		
 		}
 
 		// Group by
 		switch ( $this->chart_groupby ) {
 
 			case 'day' :
+				
 				$this->group_by_query = 'YEAR(posts.post_date), MONTH(posts.post_date), DAY(posts.post_date)';
 				$this->chart_interval = ceil( max( 0, ( $this->end_date - $this->start_date ) / ( 60 * 60 * 24 ) ) );
 				$this->barwidth       = 60 * 60 * 24 * 1000;
-			break;
+				
+				break;
 
 			case 'month' :
+				
 				$this->group_by_query = 'YEAR(posts.post_date), MONTH(posts.post_date)';
 				$this->chart_interval = 0;
 				$min_date             = $this->start_date;
@@ -214,7 +231,13 @@ class WC_Report_Sales_By_Marketplace {
 				}
 
 				$this->barwidth = 60 * 60 * 24 * 7 * 4 * 1000;
-			break;
+				
+				break;
+
+			default:
+
+				break;
+				
 		}
 
 	}
