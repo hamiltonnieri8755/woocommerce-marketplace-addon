@@ -33,13 +33,10 @@ if ( ! function_exists( 'get_plugins' ) )
 
 // Including base class
 if ( ! class_exists( 'WC_Report_Sales_By_Marketplace' ) )
-    require_once plugin_dir_path( __FILE__ ) . 'class-wc-report-sales-by-marketplace.php';
+    require_once plugin_dir_path( __FILE__ ) . '/classes/class-wc-report-sales-by-marketplace.php';
 
 // Whether plugin active or not
 if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) :
-
-	// The object
-    $wmp = new WC_Report_Sales_By_Marketplace( );
 
     /**
      * WooCommerce hook
@@ -48,27 +45,92 @@ if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) :
      * @return array
      */
 	function marketplace_addon( $reports ) {
-            $reports['orders']['reports']['sales_by_marketplace'] = array(
-                'title'       => 'Sales by marketplace',
-                'description' => '',
-                'hide_title'  => true,
-                'callback'    => 'wc_marketplace'
+        if ( get_option( 'wplister_create_orders' ) != '1' ) {
+            $reports['orders_mp'] = array(
+                'title'  => 'Orders by Marketplace',
+                'reports' => array(
+                    "sales_by_date" => array(
+                        'title'       => __( 'Sales by date', 'woocommerce' ),
+                        'description' => '',
+                        'hide_title'  => true,
+                        'callback'    => 'wc_marketplace_date'
+                    ),
+                    "sales_by_product" => array(
+                        'title'       => __( 'Sales by product', 'woocommerce' ),
+                        'description' => '',
+                        'hide_title'  => true,
+                        'callback'    => 'wc_marketplace_product'
+                    ),
+                    "sales_by_category" => array(
+                        'title'       => __( 'Sales by category', 'woocommerce' ),
+                        'description' => '',
+                        'hide_title'  => true,
+                        'callback'    => 'wc_marketplace_category'
+                    )
+                )
             );
-            return $reports;
+        } else {
+            $reports['orders_mp'] = array(
+                'title'  => 'Orders by Marketplace',
+                'reports' => array(
+                    "sales_by_date2" => array(
+                        'title'       => __( 'Sales by date', 'woocommerce' ),
+                        'description' => '',
+                        'hide_title'  => true,
+                        'callback'    => 'wc_marketplace_date2'
+                    )
+                )
+            );
+        }
+
+        return $reports;
 	}
 
 	add_filter( 'woocommerce_admin_reports', 'marketplace_addon' );
 
+    // The object
+    $wmp = new WC_Report_Sales_By_Marketplace( );
+
     /**
-     * Function to hook into WooCommerce
+     * Function to show sales_by_date of Orders by Marketplace
      * 
      * @return string
      */
-    function wc_marketplace() {
-    	global $wmp;
-        $wmp->output_report();
+    function wc_marketplace_date() {
+        global $wmp;
+        $wmp->output_report_date();
     }
 
+    /**
+     * Function to show sales_by_date of Orders by Marketplace
+     * 
+     * @return string
+     */
+    function wc_marketplace_date2() {
+        global $wmp;
+        $wmp->output_report_date2();
+    }
+
+    /**
+     * Function to show sales_by_product of Orders by Marketplace
+     * 
+     * @return string
+     */
+    function wc_marketplace_product() {
+        global $wmp;
+        $wmp->output_report_product();
+    }
+
+    /**
+     * Function to show sales_by_category of Orders by Marketplace
+     * 
+     * @return string
+     */
+    function wc_marketplace_category() {
+        global $wmp;
+        $wmp->output_report_category();
+    }
+    
 else :
 
     /**
