@@ -45,7 +45,7 @@ if ( is_plugin_active( 'woocommerce/woocommerce.php' ) ) :
      * @return array
      */
 	function marketplace_addon( $reports ) {
-        if ( get_option( 'wplister_create_orders' ) != '1' ) {
+        if ( get_option( 'wplister_create_orders' ) != '0' ) {
             $reports['orders_mp'] = array(
                 'title'  => 'Orders by Marketplace',
                 'reports' => array(

@@ -86,6 +86,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</strong>
 						<span class="channel-name">WebStore</span>
 						<span class="percent">&nbsp;(&nbsp;<?php echo $this->get_mp_percent(0, "disabled"); ?>&nbsp;)&nbsp;</span>
+						<div class="details-wrapper">
+							<?php
+								$store_orders_cnt = $this->get_orders_count_mp(3);
+								$store_products_cnt = $this->get_products_count_mp(3);
+								echo "<span>" . 'Products Sold : ' . $store_products_cnt . "</span><br/>";
+								echo "<span>" . 'Orders Placed : ' . $store_orders_cnt . "</span><br/>";
+							?>
+						</div>
 					</li>
 
 					<!-- Amazon Legend -->
@@ -95,6 +103,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</strong>
 						<span class="channel-name">Amazon</span>
 						<span class="percent">&nbsp;(&nbsp;<?php echo $this->get_mp_percent(1); ?>&nbsp;)&nbsp;</span><br/>
+						<div class="details-wrapper">
+							<?php
+								$amazon_orders_cnt = $this->get_orders_count_disabled(1);
+								$amazon_products_cnt = $this->get_products_count_disabled(1);
+								echo "<span>" . 'Products Sold : ' . $amazon_products_cnt . "</span><br/>";
+								echo "<span>" . 'Orders Placed : ' . $amazon_orders_cnt . "</span><br/>";
+							?>
+						</div>
 					</li>
 
 					<!-- eBay Legend -->
@@ -104,6 +120,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</strong>
 						<span class="channel-name">eBay</span>
 						<span class="percent">&nbsp;(&nbsp;<?php echo $this->get_mp_percent(2); ?>&nbsp;)&nbsp;</span><br/>
+						<div class="details-wrapper">
+							<?php
+								$ebay_orders_cnt = $this->get_orders_count_disabled(2);
+								$ebay_products_cnt = $this->get_products_count_disabled(2);
+								echo "<span>" . 'Products Sold : ' . $ebay_products_cnt . "</span><br/>";
+								echo "<span>" . 'Orders Placed : ' . $ebay_orders_cnt . "</span><br/>";
+							?>
+						</div>
 					</li>
 
 					<!-- Total Legend -->
@@ -113,6 +137,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</strong>
 						<span class="channel-name">Total</span>
 						<span class="percent">&nbsp;(&nbsp;<?php echo "100%" ; ?>&nbsp;)&nbsp;</span><br/>
+						<div class="details-wrapper">
+							<?php
+								echo "<span>" . 'Products Sold : ' . ( $store_products_cnt + $amazon_products_cnt + $ebay_products_cnt ) . "</span><br/>";
+								echo "<span>" . 'Orders Placed : ' . ( $store_orders_cnt + $amazon_orders_cnt + $ebay_orders_cnt ) . "</span><br/>";
+							?>
+						</div>
 					</li>
 
 				</ul>

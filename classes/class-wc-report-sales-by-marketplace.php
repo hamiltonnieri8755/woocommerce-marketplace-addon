@@ -4,6 +4,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
+if ( ! class_exists('OrderType') ) {
+	require_once WP_PLUGIN_DIR . '/woocommerce-marketplace-addon/includes/OrderType.php';
+}
+
 /**
  * WC_Report_Sales_By_Category
  *
@@ -267,15 +271,33 @@ class WC_Report_Sales_By_Marketplace {
 			}
 		}
 		foreach ( $this->get_order_amount_data( $marketplace_number, $type ) as $result ) {
-			switch ( $this->chart_groupby ) {
-				case 'day' :
-					$time = strtotime( date( 'Ymd', strtotime( $result->order_date ) ) ) . '000';
-					break;
-				case 'month' :
-				default :
-					$time = strtotime( date( 'Ym', strtotime( $result->order_date ) ) . '01' ) . '000';
-					break;
+			/*
+			if ( $type == "disabled" && $marketplace_number == 2 ) {
+				// Disabled create order option, ebay - change GMT time to Local time
+				switch ( $this->chart_groupby ) {
+					case 'day' :
+						$time = strtotime( date( 'Ymd', strtotime( $this->convertGMTToLocal($result->order_date) ) ) ) . '000';
+						break;
+					case 'month' :
+					default :
+						$time = strtotime( date( 'Ym', strtotime( $this->convertGMTToLocal($result->order_date) ) ) . '01' ) . '000';
+						break;
+				}
+
+			} else */{
+
+				switch ( $this->chart_groupby ) {
+					case 'day' :
+						$time = strtotime( date( 'Ymd', strtotime( $result->order_date ) ) ) . '000';
+						break;
+					case 'month' :
+					default :
+						$time = strtotime( date( 'Ym', strtotime( $result->order_date ) ) . '01' ) . '000';
+						break;
+				}
+
 			}
+
 
 			if ( ! isset( $prepared_data[ $time ] ) ) {
 				continue;
@@ -507,8 +529,10 @@ class WC_Report_Sales_By_Marketplace {
 			
 			$sql .= "GROUP BY ID, product_id, order_date";
 		} else if ( $type == "disabled" ) {
+
 			// sales by date for disabled create order
 			$sql = "";
+
 			switch ( $marketplace_number ) {
 				case '0':
 					// Web Store
@@ -533,8 +557,10 @@ class WC_Report_Sales_By_Marketplace {
 							ORDER BY amazon_orders.date_created";
 					break;
 				case '2':
-					// EBay
-					$sql = "SELECT ROUND(SUM(ebay_orders.total),2) AS order_total, DATE_FORMAT(ebay_orders.date_created,'%Y-%m-%d') AS order_date
+					// EBay - DATE_FORMAT(ebay_orders.date_created,'%Y-%m-%d')
+	        		$start_date_forsql = $this->convertLocalToGMT( $start_date_forsql );
+	        		$end_date_forsql   = $this->convertLocalToGMT( $end_date_forsql );
+					$sql = "SELECT ROUND(SUM(ebay_orders.total),2) AS order_total, ebay_orders.date_created AS order_date
 							FROM {$wpdb->prefix}ebay_orders AS ebay_orders 
 							WHERE ebay_orders.date_created >= '$start_date_forsql'
 							AND ebay_orders.date_created < '$end_date_forsql'
@@ -548,8 +574,9 @@ class WC_Report_Sales_By_Marketplace {
 		}
 		
 		//echo $sql."<br/>";
-        
-        return $wpdb->get_results( $sql );
+
+		return $wpdb->get_results( $sql );
+ 
     }
 
 	/**
@@ -942,4 +969,129 @@ class WC_Report_Sales_By_Marketplace {
 
         return $wpdb->get_results( $sql );
     }
+
+    /**
+	 * Get Number Of Orders Placed, For Disabled Create Orders
+	 *
+	 * @return array
+	 */
+    public function get_orders_count_disabled( $marketplace_number = 1 ) {
+    	global $wpdb;
+
+        $start_date_forsql = date( 'Y-m-d', $this->start_date );
+        $end_date_forsql   = date( 'Y-m-d', strtotime( '+1 day', $this->end_date ) );
+
+        // Convert Time Zone to UTC
+        $start_date_forsql = $this->convertLocalToGMT( $start_date_forsql );
+        $end_date_forsql   = $this->convertLocalToGMT( $end_date_forsql );
+
+        $sql = '';
+
+        if ( $marketplace_number == '1' ) {
+        	$sql = "SELECT COUNT(*) AS Count
+        			FROM {$wpdb->prefix}amazon_orders
+        			WHERE date_created >= '$start_date_forsql'
+        			AND date_created < '$end_date_forsql'
+        			AND status NOT IN ('Canceled', 'Pending')";
+        } else if ( $marketplace_number == '2' ) {
+        	$sql = "SELECT COUNT(*) AS Count
+        			FROM {$wpdb->prefix}ebay_orders
+        			WHERE date_created >= '$start_date_forsql' 
+        			AND date_created < '$end_date_forsql'
+        			AND CompleteStatus IN ( 'Completed' )";
+        }
+        $result = $wpdb->get_results( $sql );
+        return $result[0]->Count;
+    }
+
+    /**
+	 * Get Number Of Items Purchased, For Disabled Create Orders
+	 *
+	 * @return array
+	 */
+    public function get_products_count_disabled( $marketplace_number = 1 ) {
+    	global $wpdb;
+
+        $start_date_forsql = date( 'Y-m-d', $this->start_date );
+        $end_date_forsql   = date( 'Y-m-d', strtotime( '+1 day', $this->end_date ) );
+
+        // Convert Time Zone to UTC
+        $start_date_forsql = $this->convertLocalToGMT( $start_date_forsql );
+        $end_date_forsql   = $this->convertLocalToGMT( $end_date_forsql );
+
+        $sql = '';
+		$item_count = 0;
+
+      	if ( $marketplace_number == 1 ) {
+
+      		$sql = "SELECT items
+        			FROM {$wpdb->prefix}amazon_orders
+        			WHERE date_created >= '$start_date_forsql'
+        			AND date_created < '$end_date_forsql'
+        			AND status NOT IN ('Canceled', 'Pending')";
+
+        	$rows = $wpdb->get_results( $sql );
+	      	
+	      	foreach ( $rows as $row ) {
+	      		$items = json_decode(json_encode(maybe_unserialize($row->items)), true);
+	      		foreach ( $items as $item ) {
+	      			$item_count += $item["QuantityOrdered"];
+	      		}    		
+      		}
+
+      		return $item_count;
+
+      	} else if ( $marketplace_number == 2 ) {
+      		
+      		$sql = "SELECT id,items
+        			FROM {$wpdb->prefix}ebay_orders
+        			WHERE date_created >= '$start_date_forsql'
+        			AND date_created < '$end_date_forsql'
+        			AND CompleteStatus IN ( 'Completed' )";
+
+        	$rows = $wpdb->get_results( $sql );
+
+        	foreach ( $rows as $row ) {
+        		$items = unserialize($row->items);
+        		if ( $items == false) {
+        			echo "error";
+        			continue;
+        		}
+        		foreach ($items as $item) {
+        			$item_count += $item["quantity"];
+        			//echo $row->id . ":" . $item["quantity"] . "<br/>";
+        		}
+        	} 
+        	//echo $sql;
+        	return $item_count;
+
+      	}
+      	
+    }
+
+    // Convert Local Time zone to UTC for disabled create order option
+    function convertLocalToGMT( $time ) {
+
+    	// Get Start / End Date As Pacific Time Zone ( EBAY Time Zone )
+        $date = new DateTime( $time , new DateTimeZone('America/Los_Angeles') );
+
+        // Convert Start / End Date to UTC
+        $date->setTimeZone( new DateTimeZone('UTC') );
+        $time= $date->format( 'Y-m-d H:i:s' );
+        
+        return $time;
+ 	}
+
+ 	// Convert GMT Time zone to Local for disabled create order option
+    function convertGMTToLocal( $time ) {
+
+    	// Get Start / End Date As Pacific Time Zone ( EBAY Time Zone )
+        $date = new DateTime( $time , new DateTimeZone('UTC') );
+
+        // Convert Start / End Date to UTC
+        $date->setTimeZone( new DateTimeZone('America/Los_Angeles') );
+        $time= $date->format( 'Y-m-d' );
+        
+        return $time;
+ 	}
 }
