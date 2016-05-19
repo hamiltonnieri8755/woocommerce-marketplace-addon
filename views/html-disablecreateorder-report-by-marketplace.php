@@ -39,6 +39,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	line-height: 30px;
 	font-weight: bold;
 }
+.topseller-link {
+	color: rgba(0, 115, 170, 0.7);
+}
 </style>
 <div id="poststuff" class="woocommerce-reports-wide">
 	<div class="postbox">
@@ -74,7 +77,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</form>
 				</li>
 			</ul>
-		</h3>	
+		</h3>								
+		<?php add_thickbox(); ?>
 		<div class="inside chart-with-sidebar">
 			<div class="chart-sidebar">
 				<ul class="chart-legend">
@@ -93,6 +97,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 								echo "<span>" . 'Products Sold : ' . $store_products_cnt . "</span><br/>";
 								echo "<span>" . 'Orders Placed : ' . $store_orders_cnt . "</span><br/>";
 							?>
+							<div id="webstore-top10-wrapper" style="display:none;">
+							     <table>
+									<tbody>
+										<tr>
+											<th>No</th>
+											<th>Name</th>
+											<th>SKU</th>
+											<th>Quantity</th>
+										</tr>
+										<?php
+											$this->get_products_count_disabled(3);
+											$i = 0;
+											foreach ( $this->webstore_products_sold as $key => $value ) {
+												$row = $value;
+												echo "<tr>";
+												echo "<td>" . ( $i + 1 ) . "</td>";
+												echo "<td>" . $row->title . "</td>";
+												echo "<td>" . $row->sku . "</td>";
+												echo "<td>" . $row->quantity . "</td>";
+												echo "</tr>";
+												$i++;
+												if ( $i == 10 ) 
+													break;
+											}
+										?>
+									</tbody>
+								</table>
+							</div>
+							<a href="#TB_inline?width=600&height=550&inlineId=webstore-top10-wrapper" class="topseller-link thickbox">Top 10 Best Sellers</a>
 						</div>
 					</li>
 
@@ -107,9 +140,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<?php
 								$amazon_orders_cnt = $this->get_orders_count_disabled(1);
 								$amazon_products_cnt = $this->get_products_count_disabled(1);
-								echo "<span>" . 'Products Sold : ' . $amazon_products_cnt . "</span><br/>";
+								echo "<span>" . 'Product Sale : ' . $this->amazon_products_total . "</span><br/>";
+								echo "<span>" . 'Shipping Price : ' . $this->amazon_shipping_total . "</span><br/>";
 								echo "<span>" . 'Orders Placed : ' . $amazon_orders_cnt . "</span><br/>";
+								echo "<span>" . 'Products Sold : ' . $amazon_products_cnt . "</span><br/>";
 							?>
+							<div id="amazon-top10-wrapper" style="display:none;">
+								<table>
+									<tbody>
+										<tr>
+											<th>No</th>
+											<th>Name</th>
+											<th>SKU</th>
+											<th>Quantity</th>
+										</tr>
+										<?php
+											$i = 0;
+											foreach ( $this->amazon_products_sold as $key => $value ) {
+												$row = $value;
+												echo "<tr>";
+												echo "<td>" . ( $i + 1 ) . "</td>";
+												echo "<td>" . $row->title . "</td>";
+												echo "<td>" . $row->sku . "</td>";
+												echo "<td>" . $row->quantity . "</td>";
+												echo "</tr>";
+												$i++;
+												if ( $i == 10 ) 
+													break;
+											}
+										?>
+									</tbody>
+								</table>
+							</div>
+							<a href="#TB_inline?width=600&height=550&inlineId=amazon-top10-wrapper" class="topseller-link thickbox">Top 10 Best Sellers</a>
 						</div>
 					</li>
 
@@ -127,6 +190,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 								echo "<span>" . 'Products Sold : ' . $ebay_products_cnt . "</span><br/>";
 								echo "<span>" . 'Orders Placed : ' . $ebay_orders_cnt . "</span><br/>";
 							?>
+							<div id="ebay-top10-wrapper" style="display:none;">
+							     <table>
+									<tbody>
+										<tr>
+											<th>No</th>
+											<th>Name</th>
+											<th>SKU</th>
+											<th>Quantity</th>
+										</tr>
+										<?php
+											$i = 0;
+											foreach ( $this->ebay_products_sold as $key => $value ) {
+												$row = $value;
+												echo "<tr>";
+												echo "<td>" . ( $i + 1 ) . "</td>";
+												echo "<td>" . $row->title . "</td>";
+												echo "<td>" . $row->sku . "</td>";
+												echo "<td>" . $row->quantity . "</td>";
+												echo "</tr>";
+												$i++;
+												if ( $i == 10 ) 
+													break;
+											}
+										?>
+									</tbody>
+								</table>
+							</div>
+							<a href="#TB_inline?width=600&height=550&inlineId=ebay-top10-wrapper" class="topseller-link thickbox">Top 10 Best Sellers</a>
 						</div>
 					</li>
 
@@ -142,6 +233,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 								echo "<span>" . 'Products Sold : ' . ( $store_products_cnt + $amazon_products_cnt + $ebay_products_cnt ) . "</span><br/>";
 								echo "<span>" . 'Orders Placed : ' . ( $store_orders_cnt + $amazon_orders_cnt + $ebay_orders_cnt ) . "</span><br/>";
 							?>
+							<div id="overall-top10-wrapper" style="display:none;">
+							     <table>
+									<tbody>
+										<tr>
+											<th>No</th>
+											<th>Name</th>
+											<th>SKU</th>
+											<th>Quantity</th>
+										</tr>
+										<?php
+											$i = 0;
+											foreach ( $this->get_overall_bestseller() as $key => $value ) {
+												$row = $value;
+												echo "<tr>";
+												echo "<td>" . ( $i + 1 ) . "</td>";
+												echo "<td>" . $row->title . "</td>";
+												echo "<td>" . $row->sku . "</td>";
+												echo "<td>" . $row->quantity . "</td>";
+												echo "</tr>";
+												$i++;
+												if ( $i == 10 ) 
+													break;
+											}
+										?>
+									</tbody>
+								</table>
+							</div>
+							<a href="#TB_inline?width=600&height=550&inlineId=overall-top10-wrapper" class="topseller-link thickbox">Top 10 Best Sellers</a>
 						</div>
 					</li>
 

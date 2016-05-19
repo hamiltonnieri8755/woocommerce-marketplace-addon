@@ -97,6 +97,18 @@ class WC_Report_Sales_By_Marketplace {
 	public $category_id;
 
 	/**
+	 * Number of product purchased data
+	 *
+	 * @var object array
+	 */
+	public $ebay_products_sold;
+	public $amazon_products_sold;
+	public $amazon_products_total;
+	public $amazon_shipping_total;
+	public $webstore_products_sold;
+	public $overall_products_sold;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -116,8 +128,18 @@ class WC_Report_Sales_By_Marketplace {
 		else
 			$this->category_id = "";
 
+		$this->ebay_products_sold = array();
+
 		$this->data = array();
 		$this->chart_colours = array( '#1abc9c', '#34495e', '#3498db', '#c6d8d1' );
+
+		$this->ebay_products_sold 	  = array();
+		$this->amazon_products_sold   = array();
+		$this->webstore_products_sold = array();
+		$this->overall_products_sold  = array();
+
+		$this->amazon_shipping_total = 0;
+		$this->amazon_products_total = 0;
 	}
 
 	/**
@@ -271,8 +293,8 @@ class WC_Report_Sales_By_Marketplace {
 			}
 		}
 		foreach ( $this->get_order_amount_data( $marketplace_number, $type ) as $result ) {
-			/*
-			if ( $type == "disabled" && $marketplace_number == 2 ) {
+			
+			if ( $type == "disabled" && ( $marketplace_number == 2 || $marketplace_number == 1 ) ) {
 				// Disabled create order option, ebay - change GMT time to Local time
 				switch ( $this->chart_groupby ) {
 					case 'day' :
@@ -283,8 +305,7 @@ class WC_Report_Sales_By_Marketplace {
 						$time = strtotime( date( 'Ym', strtotime( $this->convertGMTToLocal($result->order_date) ) ) . '01' ) . '000';
 						break;
 				}
-
-			} else */{
+			} else {
 
 				switch ( $this->chart_groupby ) {
 					case 'day' :
@@ -297,8 +318,6 @@ class WC_Report_Sales_By_Marketplace {
 				}
 
 			}
-
-
 			if ( ! isset( $prepared_data[ $time ] ) ) {
 				continue;
 			}
@@ -466,7 +485,7 @@ class WC_Report_Sales_By_Marketplace {
 
 			switch ( $marketplace_number ) {
 				case '0':
-					// WEB STORE 
+					// WEB STORE
 					$sql .= "AND posts.ID NOT IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_ebay_order_id')
 							 AND posts.ID NOT IN (SELECT pm.post_id FROM {$wpdb->prefix}postmeta pm WHERE pm.meta_key = '_wpla_amazon_order_id')";		 
 					break;
@@ -529,7 +548,6 @@ class WC_Report_Sales_By_Marketplace {
 			
 			$sql .= "GROUP BY ID, product_id, order_date";
 		} else if ( $type == "disabled" ) {
-
 			// sales by date for disabled create order
 			$sql = "";
 
@@ -548,12 +566,14 @@ class WC_Report_Sales_By_Marketplace {
 					break;
 				case '1':
 					// Amazon
-					$sql = "SELECT ROUND(SUM(amazon_orders.total),2) AS order_total, DATE_FORMAT(amazon_orders.date_created,'%Y-%m-%d') AS order_date
-							FROM {$wpdb->prefix}amazon_orders AS amazon_orders 
+					$start_date_forsql = $this->convertLocalToGMT( $start_date_forsql );
+	        		$end_date_forsql   = $this->convertLocalToGMT( $end_date_forsql );
+					$sql = "SELECT ROUND(SUM(amazon_orders.total),2) AS order_total, amazon_orders.date_created AS order_date
+							FROM {$wpdb->prefix}amazon_orders AS amazon_orders
 							WHERE amazon_orders.date_created >= '$start_date_forsql'
 							AND amazon_orders.date_created < '$end_date_forsql'
-							AND amazon_orders.status NOT IN ('Canceled', 'Pending')
-							GROUP BY YEAR(amazon_orders.date_created), MONTH(amazon_orders.date_created), DAY(amazon_orders.date_created) 
+							AND amazon_orders.status IN ('Shipped')
+							GROUP BY YEAR(amazon_orders.date_created), MONTH(amazon_orders.date_created), DAY(amazon_orders.date_created), HOUR(amazon_orders.date_created) 
 							ORDER BY amazon_orders.date_created";
 					break;
 				case '2':
@@ -565,7 +585,7 @@ class WC_Report_Sales_By_Marketplace {
 							WHERE ebay_orders.date_created >= '$start_date_forsql'
 							AND ebay_orders.date_created < '$end_date_forsql'
 							AND ebay_orders.CompleteStatus IN ( 'Completed' )
-							GROUP BY YEAR(ebay_orders.date_created), MONTH(ebay_orders.date_created), DAY(ebay_orders.date_created) 
+							GROUP BY YEAR(ebay_orders.date_created), MONTH(ebay_orders.date_created), DAY(ebay_orders.date_created), HOUR(ebay_orders.date_created)
 							ORDER BY ebay_orders.date_created";
 					break;
 				default:
@@ -720,7 +740,7 @@ class WC_Report_Sales_By_Marketplace {
 						AND ( ( order_item_meta__line_subtotal.meta_key   = '_line_subtotal' AND order_item_meta__line_subtotal.meta_value > '0' )) GROUP BY product_id ORDER BY order_item_qty DESC LIMIT 1";
 				break;
 			case '3':
-				// // GET OVERALL BEST SELLER
+				// GET OVERALL BEST SELLER
 		        $sql = "SELECT  order_item_meta__product_id.meta_value AS product_id,SUM( order_item_meta__qty.meta_value) AS order_item_qty FROM {$wpdb->prefix}posts AS posts 
 						INNER JOIN {$wpdb->prefix}woocommerce_order_items AS order_items ON posts.ID = order_items.order_id
 						INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__product_id ON (order_items.order_item_id = order_item_meta__product_id.order_item_id)  AND (order_item_meta__product_id.meta_key = '_product_id') 
@@ -992,7 +1012,7 @@ class WC_Report_Sales_By_Marketplace {
         			FROM {$wpdb->prefix}amazon_orders
         			WHERE date_created >= '$start_date_forsql'
         			AND date_created < '$end_date_forsql'
-        			AND status NOT IN ('Canceled', 'Pending')";
+        			AND status IN ('Shipped')";
         } else if ( $marketplace_number == '2' ) {
         	$sql = "SELECT COUNT(*) AS Count
         			FROM {$wpdb->prefix}ebay_orders
@@ -1009,62 +1029,162 @@ class WC_Report_Sales_By_Marketplace {
 	 *
 	 * @return array
 	 */
-    public function get_products_count_disabled( $marketplace_number = 1 ) {
+    public function get_products_count_disabled( $marketplace_number = 3 ) {
     	global $wpdb;
 
         $start_date_forsql = date( 'Y-m-d', $this->start_date );
         $end_date_forsql   = date( 'Y-m-d', strtotime( '+1 day', $this->end_date ) );
 
-        // Convert Time Zone to UTC
-        $start_date_forsql = $this->convertLocalToGMT( $start_date_forsql );
-        $end_date_forsql   = $this->convertLocalToGMT( $end_date_forsql );
-
         $sql = '';
 		$item_count = 0;
 
-      	if ( $marketplace_number == 1 ) {
+      	if ( $marketplace_number == 1 ) {	 // AMAZON
 
-      		$sql = "SELECT items
+	        // Convert Time Zone to UTC
+	        $start_date_forsql = $this->convertLocalToGMT( $start_date_forsql );
+	        $end_date_forsql   = $this->convertLocalToGMT( $end_date_forsql );
+
+      		$sql = "SELECT id,items, total
         			FROM {$wpdb->prefix}amazon_orders
         			WHERE date_created >= '$start_date_forsql'
         			AND date_created < '$end_date_forsql'
-        			AND status NOT IN ('Canceled', 'Pending')";
+        			AND status IN ('Shipped')";
 
         	$rows = $wpdb->get_results( $sql );
-	      	
+	      	$shipping_price = 0;
+	      	$item_price = 0;
 	      	foreach ( $rows as $row ) {
+
 	      		$items = json_decode(json_encode(maybe_unserialize($row->items)), true);
+
 	      		foreach ( $items as $item ) {
+
+	      			// Sum each item's quantity
 	      			$item_count += $item["QuantityOrdered"];
-	      		}    		
+	      			
+	      			$shipping_price += $item["ShippingPrice"]["Amount"];
+	      			$item_price += $item["ItemPrice"]["Amount"];
+
+	      			if ( isset($this->amazon_products_sold[$item["Title"]]) ) {
+
+	      				// Get item object from array by SellerSKU ( Amazon )
+	      				$item_qty_obj = $this->amazon_products_sold[$item["Title"]];
+        				$item_qty_obj->quantity += $item["QuantityOrdered"];
+        				$this->amazon_products_sold[$item["Title"]] = $item_qty_obj;
+
+        			} else {
+
+        				// Create item object - sku, title, quantity
+        				$item_qty_obj = new stdClass();
+        				$item_qty_obj->sku = $item["SellerSKU"];
+        				$item_qty_obj->title = $item["Title"];
+        				$item_qty_obj->quantity = $item["QuantityOrdered"];
+
+        				// Add item object to array
+        				$this->amazon_products_sold[$item["Title"]] = $item_qty_obj;
+
+        			}
+	      		}	
+
       		}
 
+      		$this->sort_itemsold( $marketplace_number );
+
+      		$this->amazon_products_total = $item_price;
+      		$this->amazon_shipping_total = $shipping_price;
+
+      		//echo $sql;
       		return $item_count;
 
-      	} else if ( $marketplace_number == 2 ) {
+      	} else if ( $marketplace_number == 2 ) {	// EBAY
       		
+      		// Convert Time Zone to UTC
+	        $start_date_forsql = $this->convertLocalToGMT( $start_date_forsql );
+	        $end_date_forsql   = $this->convertLocalToGMT( $end_date_forsql );
+
       		$sql = "SELECT id,items
         			FROM {$wpdb->prefix}ebay_orders
         			WHERE date_created >= '$start_date_forsql'
         			AND date_created < '$end_date_forsql'
         			AND CompleteStatus IN ( 'Completed' )";
-
         	$rows = $wpdb->get_results( $sql );
 
         	foreach ( $rows as $row ) {
+	      		
+	      		// Sum each item's quantity
         		$items = unserialize($row->items);
-        		if ( $items == false) {
-        			echo "error";
-        			continue;
-        		}
+
         		foreach ($items as $item) {
+
         			$item_count += $item["quantity"];
-        			//echo $row->id . ":" . $item["quantity"] . "<br/>";
+
+        			if ( isset($this->ebay_products_sold[$item["title"]]) ) {
+
+						// Get item object from array by SellerSKU ( Amazon )
+	      				$item_qty_obj = $this->ebay_products_sold[$item["title"]];
+        				$item_qty_obj->quantity += $item["quantity"];
+        				$this->ebay_products_sold[$item["title"]] = $item_qty_obj;
+
+        			} else {
+
+        				// Create item object - sku, title, quantity
+        				$item_qty_obj = new stdClass();
+        				$item_qty_obj->sku = $item["sku"];
+        				$item_qty_obj->title = $item["title"];
+        				$item_qty_obj->quantity = $item["quantity"];
+
+        				$this->ebay_products_sold[$item["title"]] = $item_qty_obj;
+        			}
+
         		}
-        	} 
+        	}
+
+        	$this->sort_itemsold( $marketplace_number );
+        
         	//echo $sql;
         	return $item_count;
 
+      	} else if ( $marketplace_number == 3 ) {	// WEBSTORE
+
+      		$sql = "SELECT  item_sku.meta_value AS sku, product_post.post_title AS title, SUM( order_item_meta__qty.meta_value) AS quantity 
+      				FROM {$wpdb->prefix}posts AS posts 
+					INNER JOIN {$wpdb->prefix}woocommerce_order_items AS order_items ON posts.ID = order_items.order_id
+					INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__product_id ON (order_items.order_item_id = order_item_meta__product_id.order_item_id)  AND (order_item_meta__product_id.meta_key = '_product_id')
+					INNER JOIN {$wpdb->prefix}postmeta AS item_sku ON item_sku.post_id = order_item_meta__product_id.meta_value AND item_sku.meta_key = '_sku'
+					INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__qty ON (order_items.order_item_id = order_item_meta__qty.order_item_id)  AND (order_item_meta__qty.meta_key = '_qty') 
+					INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS order_item_meta__line_subtotal ON order_items.order_item_id = order_item_meta__line_subtotal.order_item_id 
+					INNER JOIN {$wpdb->prefix}posts AS product_post ON product_post.ID = order_item_meta__product_id.meta_value
+					WHERE 	posts.post_type 	IN ( 'shop_order' )
+					AND 	posts.post_status 	IN ( 'wc-completed','wc-processing','wc-on-hold','wc-refunded' )
+					AND 	posts.post_date >= '$start_date_forsql'
+					AND 	posts.post_date < '$end_date_forsql'
+					AND ( ( order_item_meta__line_subtotal.meta_key   = '_line_subtotal' AND order_item_meta__line_subtotal.meta_value > '0' )) 
+					GROUP BY sku ORDER BY quantity DESC";
+
+			$rows = $wpdb->get_results( $sql );
+
+			foreach ( $rows as $row ) {
+				if ( isset($this->webstore_products_sold[$row->title]) ) {
+
+					// Get item object from array by SellerSKU ( Amazon )
+      				$item_qty_obj = $this->webstore_products_sold[$row->title];
+    				$item_qty_obj->quantity += $row->quantity;
+    				$this->webstore_products_sold[$row->title] = $item_qty_obj;
+
+				} else {
+
+				   	// Create item object - sku, title, quantity
+    				$item_qty_obj = new stdClass();
+    				$item_qty_obj->sku = $row->sku;
+    				$item_qty_obj->title = $row->title;
+    				$item_qty_obj->quantity = $row->quantity;
+
+    				$this->webstore_products_sold[$row->title] = $item_qty_obj;
+				}
+			}
+			//echo $sql;
+			//print_r($this->webstore_products_sold);
+			$this->sort_itemsold( $marketplace_number );
       	}
       	
     }
@@ -1094,4 +1214,69 @@ class WC_Report_Sales_By_Marketplace {
         
         return $time;
  	}
+
+ 	function productsold_cmp( $obj_a, $obj_b ) {
+ 		// Compare quantity attribute
+ 		return $obj_a->quantity >= $obj_b->quantity ? -1 : 1;
+ 	}
+
+ 	/**
+	 * Sort products_sol array - amazon, ebay, webstore
+	 *
+	 * @return array
+	 */
+    public function sort_itemsold( $marketplace_number ) {
+    	switch ( $marketplace_number ) {
+    		case '1': 
+    			uasort($this->amazon_products_sold, array("WC_Report_Sales_By_Marketplace","productsold_cmp"));
+    			break;
+    		case '2':
+    			uasort($this->ebay_products_sold, array("WC_Report_Sales_By_Marketplace","productsold_cmp"));
+    			break;
+    		case '3':
+    			uasort($this->webstore_products_sold, array("WC_Report_Sales_By_Marketplace","productsold_cmp"));
+    			break;
+    		default:
+    			break;
+    	}
+    }
+
+    /**
+	 * Get Overall Best Seller - amazon, ebay, webstore ( disabled create orders )
+	 *
+	 * @return array
+	 */
+    public function get_overall_bestseller() {
+    	
+    	// Add amazon items to overall items sold array
+    	foreach ( $this->amazon_products_sold as $key => $item ) {
+    		if ( isset($this->overall_products_sold[$key]) ) {
+    			$this->overall_products_sold[$key]->quantity += $item->quantity;
+    		} else {
+    			$this->overall_products_sold[$key] = $item;
+    		}
+    	}
+    	// Add ebay items to overall items sold array
+    	foreach ( $this->ebay_products_sold as $key => $item ) {
+    		if ( isset($this->overall_products_sold[$key]) ) {
+    			$this->overall_products_sold[$key]->quantity += $item->quantity;
+    		} else {
+    			$this->overall_products_sold[$key] = $item;
+    		}
+    	}
+
+    	// Add webstore items to overall items sold array
+    	foreach ( $this->webstore_products_sold as $key => $item ) {
+    		if ( isset($this->overall_products_sold[$key]) ) {
+    			$this->overall_products_sold[$key]->quantity += $item->quantity;
+    		} else {
+    			$this->overall_products_sold[$key] = $item;
+    		}
+    	}
+
+    	// Sort
+    	uasort($this->overall_products_sold, array("WC_Report_Sales_By_Marketplace","productsold_cmp"));
+
+    	return $this->overall_products_sold;
+    }
 }
